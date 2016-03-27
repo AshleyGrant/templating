@@ -85,6 +85,41 @@ The following example shows an Aurelia view utilzing two-way databinding to an e
   </source-code>
 </code-listing>
 
-## [Standard Custom Element Conventions](aurelia-doc://section/3/version/1.0.0)
+## [Custom Element Basics](aurelia-doc://section/3/version/1.0.0)
 
- Creating custom elements using Aurelia is extremely simple. Simply creating a JavaScript and HTML file pair with the same name is all that is necessary to create an Aurelia custom element. The HTML file must contain an Aurelia template wrapped in a `template` element. The JavaScript file must export a JavaScript class
+ Creating custom elements using Aurelia is extremely simple. Simply creating a JavaScript and HTML file pair with the same name is all that is necessary to create an Aurelia custom element. The HTML file must contain an Aurelia template wrapped in a `template` element. The JavaScript file must export a JavaScript class. Aurelia will take the JavaScript class name and convert it from case to dash-case for the custom element's name. Note that this means it is possible for the custom element name to not match the file name. Thus, it is recommended to name your custom element files to match the custom element name. It is acceptable to export more than one class from the JavaScript file for a custom element. Aurelia will use the first class exported from the file as the custom element's view-model (VM).
+
+ <code-listing heading="secret-message.${context.language.fileExtension}">
+  <source-code lang="ES 2015/2016">
+    export class SecretMessage {
+      secretMessage = 'Be sure to drink your Ovaltine!';
+    }
+  </source-code>
+  <source-code lang="Typescript">
+    export class SecretMessage {
+      secretMessage:string = 'Be sure to drink your Ovaltine!';
+    }
+  </source-code>
+</code-listing>
+
+<code-listing heading="secret-message.html">
+  <source-code lang="HTML">
+    <template>
+      ${secretMessage}
+    </template>
+  </source-code>
+</code-listing>
+
+<code-listing heading="app.html">
+  <source-code lang="HTML">
+    <template>
+      <require from="./secret-message"></require>
+
+      And now, it's time for a secret message: <secret-message></secret-message>
+    </template>
+  </source-code>
+</code-listing>
+
+## [Custom Element Basics](aurelia-doc://section/3/version/1.0.0)
+
+Any properties or functions of the VM class may be used for binding within the custom element's view; however, a custom element must specify the properties that will be bindable as attributes on the custom element. This is done by decorating each bindable property with the `bindable` decorator.
