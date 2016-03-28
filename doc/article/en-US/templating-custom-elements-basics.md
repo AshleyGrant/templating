@@ -87,16 +87,19 @@ The following example shows an Aurelia view utilzing two-way databinding to an e
 
 ## [Custom Element Basics](aurelia-doc://section/3/version/1.0.0)
 
- Creating custom elements using Aurelia is extremely simple. Simply creating a JavaScript and HTML file pair with the same name is all that is necessary to create an Aurelia custom element. The HTML file must contain an Aurelia template wrapped in a `template` element. The JavaScript file must export a JavaScript class. Aurelia will take the JavaScript class name and convert it from case to dash-case for the custom element's name. Note that this means it is possible for the custom element name to not match the file name. Thus, it is recommended to name your custom element files to match the custom element name. It is acceptable to export more than one class from the JavaScript file for a custom element. Aurelia will use the first class exported from the file as the custom element's view-model (VM).
+ Creating custom elements using Aurelia is extremely simple. Simply creating a JavaScript and HTML file pair with the same name is all that is necessary to create an Aurelia custom element. The HTML file must contain an Aurelia template wrapped in a `template` element. The JavaScript file must export a JavaScript class. Aurelia's standard naming convention for custom element VM classes is to append `CustomElement` to the end of the class name, e.g. `SecretMessageCustomElement`. Aurelia will take the JavaScript class name, strip `CustomElement` from the end, and convert it from InitCaps to dash-case for the custom element's name. Note that this means it is possible for the custom element name to not match the file name. Thus, it is recommended to name your custom element files to match the custom element name. It is acceptable to export more than one class from the JavaScript file for a custom element. Aurelia will use the first class exported from the file as the custom element's view-model (VM). Note that each instance of a custom element will receive its own separate VM instance.
+
+
+Custom elements are not allowed to be self-closing. This means that `<secret-message />` will not work. When using a custom element, you must provide a closing tag as shown in `app.html` below.
 
  <code-listing heading="secret-message.${context.language.fileExtension}">
   <source-code lang="ES 2015/2016">
-    export class SecretMessage {
+    export class SecretMessageCustomElement {
       secretMessage = 'Be sure to drink your Ovaltine!';
     }
   </source-code>
   <source-code lang="Typescript">
-    export class SecretMessage {
+    export class SecretMessageCustomElement {
       secretMessage:string = 'Be sure to drink your Ovaltine!';
     }
   </source-code>
@@ -120,6 +123,84 @@ The following example shows an Aurelia view utilzing two-way databinding to an e
   </source-code>
 </code-listing>
 
-## [Custom Element Basics](aurelia-doc://section/3/version/1.0.0)
+It is also possible to explicitly name your custom element by using the `customAttribute` decorator on the VM class. Simply pass a string to this decorator with the exact name you wish to use for your custom element. Aurelia will not convert the string you pass it to dash-case. This means that `@customAttribute('SecretMessage')` is not converted to `secret-message` but to `secretmessage`. If any uppercase letters are passed to the decorator and development logging is enabled, Aurelia will log a message alerting you that it has lowercased the name. This is because the DOM is not case-sensitive. Thus you must be explicit about any dashes in the attribute name when using this decorator, e.g. `@customAttribute('secret-message')`.
 
-Any properties or functions of the VM class may be used for binding within the custom element's view; however, a custom element must specify the properties that will be bindable as attributes on the custom element. This is done by decorating each bindable property with the `bindable` decorator.
+Aurelia custom elements do not need to follow the naming conventions for Web Components custom elements. Namely, Aurelia allows you to create custom elements that do not have a dash in their name. This is because the Web Components specs reserve all single-word element names for the browser. Thus, you are free to create a `foo` custom element with Aurelia; however, it is recommended to refrain from creating single-world custom elements to avoid any chance of a possible naming clash in the future. Also, any Aurelia custom elements that are intended to be used as standalone Web Components custom elements MUST have a dash in their name.
+
+Before we move on, let's discuss just how easy it is to create a custom element in Aurelia and the impact it has on Aurelia's naming conventions for custom element view-model classes. One capability of the Aurelia framework is that it can take components that were originally created for use as a page in an application and use them as custom elements. When this happens, Aurelia will use the component's VM class name, dash-case it and use that as the custom element's name. The Aurelia Skeleton Navigation application provides three pages, the first of which is the `Welcome` page. All it takes to use the `Welcome` page as a custom element on any page in the application is to `require` it in to the view. At that point, it is available as the `welcome` custom element in that view. It is even possible to provide bindable properties for the page that can be used when using the page as a custom element. This means that, if you wish, you may ignore the Aurelia naming convention for your custom elements. In the example above, we could have simply named the class `SecretMessage`. The custom element would still be named `secret-message`. Given this capability, it might be considered wise to utilize Aurelia's naming convention for custom elements or use the `customAttribute` decorator to be explicit when creating a component that is only meant to be used as a custom element and not as a standalone page.
+
+## [Bindable Properties](aurelia-doc://section/4/version/1.0.0)
+
+Any properties or functions of the VM class may be used for binding within the custom element's view; however, a custom element must specify the properties that will be bindable as attributes on the custom element. This is done by decorating each bindable property with the `bindable` decorator. The default binding mode for bindable properties is one-way. This means that a property value can be bound *in* to your custom element, but any changes the custom element makes to the property value will not be propogated *out* of the custom element. This default may be overridden, if needed, by passing a settings object to the `bindable` decorator with a property named `defaultBindingMode` set. This property should be set to one of the three `bindingMode` options: `oneTime`, `oneWay`, or `twoWay`. Both `bindable and `bindingMode` may be imported from the `aurelia-framework` module. Let's look at an example custom element with a bindable property that defaults to two-way binding.
+
+ <code-listing heading="secret-message.${context.language.fileExtension}">
+  <source-code lang="ES 2015/2016">
+    import {bindable, bindingMode} from 'aurelia-framework';
+
+    export class SecretMessageCustomElement {
+      @bindable({ defaultBindingMode: bindingMode.twoWay }) message;
+      @bindable allowDestruction = false;
+
+      constructor() {
+        setInterval(() => this.deleteMessage(), 10000 );
+      }
+
+      deleteMessage() {
+        if(this.allowDestruction === true ) {
+          this.message = '';
+        }
+      }
+    }
+  </source-code>
+  <source-code lang="Typescript">
+    import {bindable, bindingMode} from 'aurelia-framework';
+
+    export class SecretMessageCustomElement {
+      @bindable({ defaultBindingMode: bindingMode.twoWay }) message: string;
+      @bindable allowDestruction: boolean = false;
+
+      constructor() {
+        setInterval(() => this.deleteMessage(), 10000 );
+      }
+
+      deleteMessage() {
+        if(this.allowDestruction === true ) {
+          this.message = '';
+        }
+      }
+    }
+  </source-code>
+</code-listing>
+
+<code-listing heading="secret-message.html">
+  <source-code lang="HTML">
+    <template>
+      <p>
+        Urgent, secret message: ${message}
+      </p>
+      <p>
+        This message will ${allowDestruction === false ? 'not ' : '' } self-destruct in less than 10 seconds!
+      </p>
+    </template>
+  </source-code>
+</code-listing>
+
+<code-listing heading="app.html">
+  <source-code lang="HTML">
+    <template>
+      <require from="./secret-message"></require>
+
+      <p>
+        Secret Message: <input type="text" value.bind="message" />
+      </p>
+      <p>
+        Allow Message to Destruct? <input type="checkbox" checked.bind="allowDestruction" />
+      </p>
+      <secret-message message.bind="message" allow-destruction.bind="allowDestruction" ></secret-message>
+    </template>
+  </source-code>
+</code-listing>
+
+In this example, the `secret-message` custom element will check every ten seconds to see if it needs to destroy (set to an empty string) the message it receives via databinding. When told to destroy the message, Aurelia's databinding system will update the bound property of the component using the custom element, thanks to the custom element specifying that this property's default binding mode is two-way. Thus, the text box will be cleared when the message "self destructs."  Of course, the component using the custom element is free to override this default by explicitly specifying the binding direction via the `one-way`, `two-way`, or `one-time` binding commands.
+
+Whether a secret message that is only shown to the person who writes the message is very useful is for you to decide.
